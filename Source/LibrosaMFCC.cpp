@@ -13,7 +13,7 @@
 Lib_Mfcc::Lib_Mfcc() : forwardFFT(fftSize) {}
 Lib_Mfcc::~Lib_Mfcc() {}
 
-std::vector<std::vector<float>> Lib_Mfcc::doMfcc(std::vector<float> y, int sampleRate, int n_Lib_Mfcc, int hopLength)
+std::vector<std::vector<float>> Lib_Mfcc::doMfcc(std::vector<float> y, int sampleRate, int n_mfcc, int hopLength)
 {
 
     auto y_pad          = padAudio(y);
@@ -21,7 +21,7 @@ std::vector<std::vector<float>> Lib_Mfcc::doMfcc(std::vector<float> y, int sampl
     auto fft            = doFFT(y_pad, hopLength);
     auto signal_power   = signalPower(fft);
     auto audio_filtered = doFilter(signal_power, mel_basis);
-    auto cepCoeff       = doDCT(audio_filtered, n_Lib_Mfcc);
+    auto cepCoeff       = doDCT(audio_filtered, n_mfcc);
     
     return cepCoeff;
 }
