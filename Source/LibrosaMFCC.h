@@ -10,18 +10,20 @@
 #pragma once
 #include <JuceHeader.h>
 
-class mfcc
+class Lib_Mfcc
 {
-    static constexpr auto fftSize = 2048;
+    static constexpr auto fftSize = 1024;
     static constexpr auto melFilterNum = 128;
     static constexpr float pi = 3.14159265358f;
 
 public:
-    mfcc();
-    ~mfcc();
+    Lib_Mfcc();
+    ~Lib_Mfcc();
 
     //master function
     std::vector<std::vector<float>> doMfcc(std::vector<float> y, int sampleRate = 22050, int n_mfcc = 20, int hopLength = 512);
+
+private:
 
     //helper functions
     double freqToMel(double freq);
@@ -38,8 +40,6 @@ public:
     std::vector<std::vector<float>> signalPower(std::vector<std::vector<float>> fftData);
     std::vector<std::vector<float>> doFilter(std::vector<std::vector<float>> signal_power, std::vector<std::vector<float>> mel_basis);
     std::vector<std::vector<float>> doDCT(std::vector<std::vector<float>> signal_filtered, int n_mfcc);
-
-private:
 
     juce::dsp::FFT forwardFFT; // FFT object to perform forward fft on
 };

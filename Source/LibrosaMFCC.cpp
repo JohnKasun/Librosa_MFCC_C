@@ -10,10 +10,10 @@
 
 #include "LibrosaMFCC.h"
 
-mfcc::mfcc() : forwardFFT(fftSize) {}
-mfcc::~mfcc() {}
+Lib_Mfcc::Lib_Mfcc() : forwardFFT(fftSize) {}
+Lib_Mfcc::~Lib_Mfcc() {}
 
-std::vector<std::vector<float>> mfcc::doMfcc(std::vector<float> y, int sampleRate, int n_mfcc, int hopLength)
+std::vector<std::vector<float>> Lib_Mfcc::doMfcc(std::vector<float> y, int sampleRate, int n_Lib_Mfcc, int hopLength)
 {
 
     auto y_pad          = padAudio(y);
@@ -21,12 +21,12 @@ std::vector<std::vector<float>> mfcc::doMfcc(std::vector<float> y, int sampleRat
     auto fft            = doFFT(y_pad, hopLength);
     auto signal_power   = signalPower(fft);
     auto audio_filtered = doFilter(signal_power, mel_basis);
-    auto cepCoeff       = doDCT(audio_filtered, n_mfcc);
+    auto cepCoeff       = doDCT(audio_filtered, n_Lib_Mfcc);
     
     return cepCoeff;
 }
 
-double mfcc::freqToMel(double freq)
+double Lib_Mfcc::freqToMel(double freq)
 {
 
     auto f_min = 0.0;
@@ -44,7 +44,7 @@ double mfcc::freqToMel(double freq)
     return mels;
 }
 
-double mfcc::melToFreq(double mel)
+double Lib_Mfcc::melToFreq(double mel)
 {
 
     auto f_min = 0.0;
@@ -62,7 +62,7 @@ double mfcc::melToFreq(double mel)
     return freqs;
 }
 
-std::vector<double> mfcc::linspace(double start_in, double end_in, int num_in)
+std::vector<double> Lib_Mfcc::linspace(double start_in, double end_in, int num_in)
 {
 
     std::vector<double> linspaced;
@@ -88,7 +88,7 @@ std::vector<double> mfcc::linspace(double start_in, double end_in, int num_in)
     return linspaced;
 }
 
-std::vector<double> mfcc::arange(double start_in, double end_in, double spacing)
+std::vector<double> Lib_Mfcc::arange(double start_in, double end_in, double spacing)
 {
     std::vector<double>aranged;
     double start = static_cast<double>(start_in);
@@ -106,7 +106,7 @@ std::vector<double> mfcc::arange(double start_in, double end_in, double spacing)
     return aranged;
 }
 
-std::vector<std::vector<float>> mfcc::normalize(std::vector<std::vector<float>> weights, std::vector<double> mel_f)
+std::vector<std::vector<float>> Lib_Mfcc::normalize(std::vector<std::vector<float>> weights, std::vector<double> mel_f)
 {
     std::vector<float> enorm(melFilterNum, 0);
     auto normWeights = std::vector<std::vector<float>>(weights.size(), std::vector<float>(weights[0].size()));
@@ -123,7 +123,7 @@ std::vector<std::vector<float>> mfcc::normalize(std::vector<std::vector<float>> 
     return normWeights;
 }
 
-std::vector<std::vector<float>> mfcc::dotProduct(std::vector<std::vector<float>> matrix1, std::vector<std::vector<float>> matrix2)
+std::vector<std::vector<float>> Lib_Mfcc::dotProduct(std::vector<std::vector<float>> matrix1, std::vector<std::vector<float>> matrix2)
 {
     std::vector<std::vector<float>> output(matrix1.size(), std::vector<float>(matrix2[0].size()));
 
@@ -147,7 +147,7 @@ std::vector<std::vector<float>> mfcc::dotProduct(std::vector<std::vector<float>>
     return output;
 }
 
-std::vector<float> mfcc::padAudio(std::vector<float> y)
+std::vector<float> Lib_Mfcc::padAudio(std::vector<float> y)
 {
     int numPad = int(fftSize / 2);
     std::vector<float> y_pad((size_t)(y.size() + (2.0 * numPad)), 0);
@@ -166,7 +166,7 @@ std::vector<float> mfcc::padAudio(std::vector<float> y)
     return y_pad;
 }
 
-std::vector<std::vector<float>> mfcc::getMelFilterBank(double sampleRate)
+std::vector<std::vector<float>> Lib_Mfcc::getMelFilterBank(double sampleRate)
 {
     auto fmin_mel = freqToMel(0.0);
     auto fmax_mel = freqToMel(sampleRate / 2.0);
@@ -225,7 +225,7 @@ std::vector<std::vector<float>> mfcc::getMelFilterBank(double sampleRate)
 
 }
 
-std::vector<std::vector<float>> mfcc::doFFT(std::vector<float> audio, int hopLength)
+std::vector<std::vector<float>> Lib_Mfcc::doFFT(std::vector<float> audio, int hopLength)
 {
     int numOfFFTs = 1 + int((audio.size() - fftSize) / hopLength);
     std::vector<std::vector<float>> fftData(numOfFFTs, std::vector<float>(fftSize / 2 + 1));
@@ -256,7 +256,7 @@ std::vector<std::vector<float>> mfcc::doFFT(std::vector<float> audio, int hopLen
     return fftData;
 }
 
-std::vector<std::vector<float>> mfcc::signalPower(std::vector<std::vector<float>> fftData)
+std::vector<std::vector<float>> Lib_Mfcc::signalPower(std::vector<std::vector<float>> fftData)
 {
     auto power = std::vector<std::vector<float>>(fftData.size(), std::vector<float>(fftData[0].size()));
 
@@ -269,7 +269,7 @@ std::vector<std::vector<float>> mfcc::signalPower(std::vector<std::vector<float>
     return power;
 }
 
-std::vector<std::vector<float>> mfcc::doFilter(std::vector<std::vector<float>> signal_power, std::vector<std::vector<float>> mel_basis)
+std::vector<std::vector<float>> Lib_Mfcc::doFilter(std::vector<std::vector<float>> signal_power, std::vector<std::vector<float>> mel_basis)
 {
     std::vector<std::vector<float> > trans_vec(signal_power[0].size(), std::vector<float>(signal_power.size()));
 
@@ -323,7 +323,7 @@ std::vector<std::vector<float>> mfcc::doFilter(std::vector<std::vector<float>> s
 
 }
 
-std::vector<std::vector<float>> mfcc::doDCT(std::vector<std::vector<float>> signal_filtered, int n_mfcc)
+std::vector<std::vector<float>> Lib_Mfcc::doDCT(std::vector<std::vector<float>> signal_filtered, int n_Lib_Mfcc)
 {
 
     auto col = signal_filtered[0].size();
@@ -348,9 +348,9 @@ std::vector<std::vector<float>> mfcc::doDCT(std::vector<std::vector<float>> sign
         }
     }
 
-    std::vector<std::vector<float>> output(n_mfcc, std::vector<float>(result[0].size()));
+    std::vector<std::vector<float>> output(n_Lib_Mfcc, std::vector<float>(result[0].size()));
 
-    for (auto i = 0; i < n_mfcc; i++)
+    for (auto i = 0; i < n_Lib_Mfcc; i++)
     {
         for (auto j = 0; j < result[0].size(); j++)
         {
