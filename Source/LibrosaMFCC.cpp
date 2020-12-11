@@ -295,7 +295,7 @@ std::vector<std::vector<float>> Lib_Mfcc::doFilter(std::vector<std::vector<float
 
     auto dot = dotProduct(mel_basis, trans_vec);
 
-    auto amin = (float)1e-10;
+    auto amin = 1e-10;
     auto topDB = (float)80.0;
 
     std::vector<std::vector<float> > audio_log(dot.size(), std::vector<float>(dot[0].size()));
@@ -336,39 +336,63 @@ std::vector<std::vector<float>> Lib_Mfcc::doFilter(std::vector<std::vector<float
 
 std::vector<std::vector<float>> Lib_Mfcc::doDCT(std::vector<std::vector<float>> signal_filtered, int n_mfcc, int dct_type)
 {
-    std::vector<std::vector<float>> dct;
-    if (dct_type == 1)
-        dct = dct;
-    else if (dct_type == 2)
-    {
-        auto col = signal_filtered[0].size();
-        auto N = signal_filtered.size();
-        std::vector<std::vector<float>> result(N, std::vector<float>(col));
+    auto N = signal_filtered.size();
+    auto col = signal_filtered[0].size();
+    std::vector<std::vector<float>> dct(N, std::vector<float>(col));
 
+    if (dct_type == 1)
+    {
         for (auto c = 0; c < col; c++)
         {
             for (auto k = 0; k < N; k++)
             {
                 auto sum = 0.0;
-                for (auto n = 0; n < N; n++)
+                for (auto n = 1; n <= (N-2); n++)
+                {
+                    sum += signal_filtered[0][c] + (pow(-1.0, k)*signal_filtered[N-1][c]) + (2.0 * signal_filtered[n][c] * cos((pi * n * k) / (N-1)));
+                }
+                dct[k][c] = (float)sum;
+            }
+        }
+    }
+    else if (dct_type == 2)
+    {
+        for (auto c = 0; c < col; c++)
+        {
+            for (auto k = 0; k < N; k++)
+            {
+                auto sum = 0.0;
+                for (auto n = 0; n <= (N-1); n++)
                 {
                     if (k == 0)
                         sum += sqrt(1.0 / (4.0 * N)) * 2.0 * signal_filtered[n][c] * cos((pi * k) * (2.0 * n + 1.0) / (2.0 * N));
                     else
                         sum += sqrt(1.0 / (2.0 * N)) * 2.0 * signal_filtered[n][c] * cos((pi * k) * (2.0 * n + 1.0) / (2.0 * N));
                 }
-                result[k][c] = (float)sum;
+                dct[k][c] = (float)sum;
             }
         }
-        dct = result;
     }
     else
-        dct = dct;
+    {
+        for (auto c = 0; c < col; c++)
+        {
+            for (auto k = 0; k < N; k++)
+            {
+                auto sum = 0.0;
+                for (auto n = 1; n <= (N-1); n++)
+                {
+                    sum += (signal_filtered[0][c] / sqrt(N)) + (sqrt(2.0 / N) * signal_filtered[n][c] * cos((pi * n) * (2.0 * k + 1.0) / (2.0 * N)));
+                }
+                dct[k][c] = (float)sum;
+            }
+        }
+    } 
 
     std::vector<std::vector<float>> output(n_mfcc, std::vector<float>(dct[0].size()));
-    for (auto i = 0; i < n_mfcc; i++)
+    for (auto i = 0; i < output.size(); i++)
     {
-        for (auto j = 0; j < dct[0].size(); j++)
+        for (auto j = 0; j < output[0].size(); j++)
         {
             output[i][j] = dct[i][j];
         }
