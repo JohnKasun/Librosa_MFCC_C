@@ -13,17 +13,28 @@
 Lib_Mfcc::Lib_Mfcc() : forwardFFT(fftOrder) {}
 Lib_Mfcc::~Lib_Mfcc() {}
 
-std::vector<std::vector<float>> Lib_Mfcc::doMfcc(std::vector<float> y, int sampleRate, int n_mfcc, int hopLength)
+std::vector<std::vector<float>> Lib_Mfcc::doMfcc(std::vector<float> y, int sampleRate, int n_mfcc, int dct_type, int hopLength, bool centered)
 {
+    std::vector<std::vector<float>> error;
+    if (hopLength < fftSize)
+    {
+        auto y_pad = y;
+        if (centered)
+            y_pad = padAudio(y);
+        else if (y.size() < fftSize)
+            return error;
+        
+        auto mel_basis = getMelFilterBank(sampleRate);
+        auto fft = doFFT(y_pad, hopLength);
+        auto signal_power = signalPower(fft);
+        auto audio_filtered = doFilter(signal_power, mel_basis);
+        auto cepCoeff = doDCT(audio_filtered, n_mfcc, dct_type);
 
-    auto y_pad          = padAudio(y);
-    auto mel_basis      = getMelFilterBank(sampleRate);
-    auto fft            = doFFT(y_pad, hopLength);
-    auto signal_power   = signalPower(fft);
-    auto audio_filtered = doFilter(signal_power, mel_basis);
-    auto cepCoeff       = doDCT(audio_filtered, n_mfcc);
+        return cepCoeff;
+    }
+    else
+        return error;
     
-    return cepCoeff;
 }
 
 double Lib_Mfcc::freqToMel(double freq)
@@ -323,39 +334,45 @@ std::vector<std::vector<float>> Lib_Mfcc::doFilter(std::vector<std::vector<float
 
 }
 
-std::vector<std::vector<float>> Lib_Mfcc::doDCT(std::vector<std::vector<float>> signal_filtered, int n_Lib_Mfcc)
+std::vector<std::vector<float>> Lib_Mfcc::doDCT(std::vector<std::vector<float>> signal_filtered, int n_mfcc, int dct_type)
 {
-
-    auto col = signal_filtered[0].size();
-    auto N = signal_filtered.size();
-    std::vector<std::vector<float>> result(N, std::vector<float>(col));
-
-    for (auto c = 0; c < col; c++)
+    std::vector<std::vector<float>> dct;
+    if (dct_type == 1)
+        dct = dct;
+    else if (dct_type == 2)
     {
-        for (auto k = 0; k < N; k++)
+        auto col = signal_filtered[0].size();
+        auto N = signal_filtered.size();
+        std::vector<std::vector<float>> result(N, std::vector<float>(col));
+
+        for (auto c = 0; c < col; c++)
         {
-            auto sum = 0.0;
-            for (auto n = 0; n < N; n++)
+            for (auto k = 0; k < N; k++)
             {
-                if (k == 0)
-                    sum += sqrt(1.0 / (4.0 * N)) * 2.0 * signal_filtered[n][c] * cos((pi * k) * (2.0 * n + 1.0) / (2.0 * N));
-                else
-                    sum += sqrt(1.0 / (2.0 * N)) * 2.0 * signal_filtered[n][c] * cos((pi * k) * (2.0 * n + 1.0) / (2.0 * N));
-
-
+                auto sum = 0.0;
+                for (auto n = 0; n < N; n++)
+                {
+                    if (k == 0)
+                        sum += sqrt(1.0 / (4.0 * N)) * 2.0 * signal_filtered[n][c] * cos((pi * k) * (2.0 * n + 1.0) / (2.0 * N));
+                    else
+                        sum += sqrt(1.0 / (2.0 * N)) * 2.0 * signal_filtered[n][c] * cos((pi * k) * (2.0 * n + 1.0) / (2.0 * N));
+                }
+                result[k][c] = (float)sum;
             }
-            result[k][c] = (float)sum;
         }
+        dct = result;
     }
+    else
+        dct = dct;
 
-    std::vector<std::vector<float>> output(n_Lib_Mfcc, std::vector<float>(result[0].size()));
-
-    for (auto i = 0; i < n_Lib_Mfcc; i++)
+    std::vector<std::vector<float>> output(n_mfcc, std::vector<float>(dct[0].size()));
+    for (auto i = 0; i < n_mfcc; i++)
     {
-        for (auto j = 0; j < result[0].size(); j++)
+        for (auto j = 0; j < dct[0].size(); j++)
         {
-            output[i][j] = result[i][j];
+            output[i][j] = dct[i][j];
         }
     }
     return output;
+    
 }
