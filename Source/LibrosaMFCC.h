@@ -12,7 +12,8 @@
 
 class Lib_Mfcc
 {
-    static constexpr auto fftSize = 1024;
+    static constexpr auto fftOrder = 10;
+    static constexpr auto fftSize = 1 << fftOrder;
     static constexpr auto melFilterNum = 128;
     static constexpr float pi = 3.14159265358f;
 

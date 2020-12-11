@@ -10,7 +10,7 @@
 
 #include "LibrosaMFCC.h"
 
-Lib_Mfcc::Lib_Mfcc() : forwardFFT(fftSize) {}
+Lib_Mfcc::Lib_Mfcc() : forwardFFT(fftOrder) {}
 Lib_Mfcc::~Lib_Mfcc() {}
 
 std::vector<std::vector<float>> Lib_Mfcc::doMfcc(std::vector<float> y, int sampleRate, int n_mfcc, int hopLength)
