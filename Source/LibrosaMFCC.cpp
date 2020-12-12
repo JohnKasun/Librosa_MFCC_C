@@ -24,12 +24,14 @@ std::vector<std::vector<float>> Lib_Mfcc::doMfcc(std::vector<float> y, int sampl
         else if (y.size() < fftSize)
             return error;
         
-        auto mel_basis = getMelFilterBank(sampleRate);
-        auto fft = doFFT(y_pad, hopLength);
-        auto signal_power = signalPower(fft);
+        auto mel_basis      = getMelFilterBank(sampleRate);
+        auto fft            = doFFT(y_pad, hopLength);
+        auto signal_power   = signalPower(fft);
         auto audio_filtered = doFilter(signal_power, mel_basis);
-        auto cepCoeff = doDCT(audio_filtered, n_mfcc, dct_type, ortho);
+        auto cepCoeff       = doDCT(audio_filtered, n_mfcc, dct_type, ortho);
 
+        /*std::vector<std::vector<float>> test{ { 1.0,2.0,3.0 }, { 3.0,2.0,1.0 }, { 3.0,4.0,5.0 } };
+        auto x = doDCT(test, 3, 3, true);*/
         return cepCoeff;
     }
     else
@@ -45,7 +47,7 @@ double Lib_Mfcc::freqToMel(double freq)
 
     auto mels = (freq - f_min) / f_sp;
 
-    auto min_log_hz = 1000.0;
+    auto min_log_hz = 1000.0; 
     auto min_log_mel = (min_log_hz - f_min) / f_sp;
     auto logstep = log(6.4) / 27.0;
 
@@ -238,6 +240,8 @@ std::vector<std::vector<float>> Lib_Mfcc::getMelFilterBank(double sampleRate)
 
 std::vector<std::vector<float>> Lib_Mfcc::doFFT(std::vector<float> audio, int hopLength)
 {
+    using namespace std::complex_literals;
+
     int numOfFFTs = 1 + int((audio.size() - fftSize) / hopLength);
     std::vector<std::vector<float>> fftData(numOfFFTs, std::vector<float>(fftSize / 2 + 1));
 
@@ -347,10 +351,22 @@ std::vector<std::vector<float>> Lib_Mfcc::doDCT(std::vector<std::vector<float>> 
             for (auto k = 0; k < N; k++)
             {
                 auto sum = 0.0;
-                for (auto n = 1; n <= (N-2); n++)
+                for (auto n = 1; n <= (N - 2); n++)
                 {
-                    sum += signal_filtered[0][c] + (pow(-1.0, k)*signal_filtered[N-1][c]) + (2.0 * signal_filtered[n][c] * cos((pi * n * k) / (N-1)));
+                    sum += signal_filtered[n][c] * cos((pi * n * k) / (N - 1));
                 }
+
+                if (ortho)
+                {
+                    sum = (sqrt(2)*(signal_filtered[0][c] + (pow(-1.0, k) * signal_filtered[N - 1][c]))) + (2.0 * sum);
+                    if (k == 0 || k == (N - 1))
+                        sum = 0.5 * sqrt(1.0 / (N - 1.0)) * sum;
+                    else
+                        sum = 0.5 * sqrt(2.0 / (N - 1.0)) * sum;
+                }
+                else
+                    sum = signal_filtered[0][c] + (pow(-1.0, k) * signal_filtered[N - 1][c]) + (2.0 * sum);
+                
                 dct[k][c] = (float)sum;
             }
         }
@@ -364,16 +380,16 @@ std::vector<std::vector<float>> Lib_Mfcc::doDCT(std::vector<std::vector<float>> 
                 auto sum = 0.0;
                 for (auto n = 0; n <= (N-1); n++)
                 {
-                    sum += 2.0 * signal_filtered[n][c] * cos((pi * k) * (2.0 * n + 1.0) / (2.0 * N));
+                    sum += signal_filtered[n][c] * cos((pi * k) * (2.0 * n + 1.0) / (2.0 * N));
                 }
 
-                auto coeff = 1.0;
+                auto coeff = 2.0;
                 if (ortho)
                 {
                     if (k == 0)
-                        coeff = sqrt(1.0 / (4.0 * N));
+                        coeff = 2.0 * sqrt(1.0 / (4.0 * N));
                     else
-                        coeff = sqrt(1.0 / (2.0 * N));
+                        coeff = 2.0 * sqrt(1.0 / (2.0 * N));
                 }
                 dct[k][c] = (float)(coeff * sum);
             }
@@ -390,15 +406,17 @@ std::vector<std::vector<float>> Lib_Mfcc::doDCT(std::vector<std::vector<float>> 
                 {
                     for (auto n = 1; n <= (N - 1); n++)
                     {
-                        sum += (signal_filtered[0][c] / sqrt(N)) + (sqrt(2.0 / N) * signal_filtered[n][c] * cos((pi * n) * (2.0 * k + 1.0) / (2.0 * N)));
+                        sum +=  signal_filtered[n][c] * cos((pi * n) * (2.0 * k + 1.0) / (2.0 * N));
                     }
+                    sum = (signal_filtered[0][c] / sqrt(N)) + (sqrt(2.0 / N)*sum);
                 }
                 else
                 {
                     for (auto n = 1; n <= (N - 1); n++)
                     {
-                        sum += signal_filtered[0][c] + (2 * signal_filtered[n][c] * cos((pi * n) * (2.0 * k + 1.0) / (2.0 * N)));
+                        sum += signal_filtered[n][c] * cos((pi * n) * (2.0 * k + 1.0) / (2.0 * N));
                     }
+                    sum = signal_filtered[0][c] + (2.0 * sum);
                 }
                 
                 dct[k][c] = (float)sum;

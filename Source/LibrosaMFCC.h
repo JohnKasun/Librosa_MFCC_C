@@ -9,13 +9,13 @@
 */
 #pragma once
 #include <JuceHeader.h>
+#include <complex>
 
 class Lib_Mfcc
 {
     static constexpr auto fftOrder = 10;
     static constexpr auto fftSize = 1 << fftOrder;
     static constexpr auto melFilterNum = 128;
-    static constexpr float pi = 3.14159265358f;
 
 public:
     Lib_Mfcc();
@@ -43,5 +43,6 @@ private:
     std::vector<std::vector<float>> doDCT(std::vector<std::vector<float>> signal_filtered, int n_mfcc, int dct_type, bool ortho);
 
     juce::dsp::FFT forwardFFT; // FFT object to perform forward fft on
+    double pi = 3.14159265358;
 };
 
