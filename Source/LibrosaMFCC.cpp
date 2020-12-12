@@ -30,8 +30,6 @@ std::vector<std::vector<float>> Lib_Mfcc::doMfcc(std::vector<float> y, int sampl
         auto audio_filtered = doFilter(signal_power, mel_basis);
         auto cepCoeff       = doDCT(audio_filtered, n_mfcc, dct_type, ortho);
 
-        /*std::vector<std::vector<float>> test{ { 1.0,2.0,3.0 }, { 3.0,2.0,1.0 }, { 3.0,4.0,5.0 } };
-        auto x = doDCT(test, 3, 3, true);*/
         return cepCoeff;
     }
     else
@@ -243,21 +241,18 @@ std::vector<std::vector<float>> Lib_Mfcc::doFFT(std::vector<float> audio, int ho
     using namespace std::complex_literals;
 
     int numOfFFTs = 1 + int((audio.size() - fftSize) / hopLength);
-    std::vector<std::vector<float>> fftData(numOfFFTs, std::vector<float>(fftSize / 2 + 1));
+    std::vector<std::vector<float>> fftData(numOfFFTs, std::vector<float>(1 + (fftSize / 2)));
 
     for (int i = 0; i < numOfFFTs; i++) {
         std::vector<float> audioData(fftSize * 2);
 
-        // Prepare for FFT
         for (int n = 0; n < (fftSize); n++) {
             float hannWindowMultiplier = (float)(0.5 * (1.0 - cos(2.0 * pi * n / ((float)fftSize))));
-            audioData[n] = hannWindowMultiplier * (float)audio[n + (hopLength * i)];
+            audioData[n] = hannWindowMultiplier * audio[n + (hopLength * i)];
         }
 
-        // JUCE FFT
         forwardFFT.performFrequencyOnlyForwardTransform(audioData.data());
 
-        // Take only positive frequency part of fft
         std::vector<float>posfftData(1 + (fftSize / 2), 0);
 
         for (int j = 0; j <= fftSize / 2; j++)
