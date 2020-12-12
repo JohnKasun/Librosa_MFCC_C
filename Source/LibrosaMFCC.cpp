@@ -347,9 +347,8 @@ std::vector<std::vector<float>> Lib_Mfcc::doDCT(std::vector<std::vector<float>> 
             {
                 auto sum = 0.0;
                 for (auto n = 1; n <= (N - 2); n++)
-                {
                     sum += signal_filtered[n][c] * cos((pi * n * k) / (N - 1));
-                }
+                
 
                 if (ortho)
                 {
@@ -374,9 +373,7 @@ std::vector<std::vector<float>> Lib_Mfcc::doDCT(std::vector<std::vector<float>> 
             {
                 auto sum = 0.0;
                 for (auto n = 0; n <= (N-1); n++)
-                {
                     sum += signal_filtered[n][c] * cos((pi * k) * (2.0 * n + 1.0) / (2.0 * N));
-                }
 
                 auto coeff = 2.0;
                 if (ortho)
@@ -397,22 +394,13 @@ std::vector<std::vector<float>> Lib_Mfcc::doDCT(std::vector<std::vector<float>> 
             for (auto k = 0; k < N; k++)
             {
                 auto sum = 0.0;
+                for (auto n = 1; n <= (N - 1); n++)
+                    sum += signal_filtered[n][c] * cos((pi * n) * (2.0 * k + 1.0) / (2.0 * N));
+
                 if (ortho)
-                {
-                    for (auto n = 1; n <= (N - 1); n++)
-                    {
-                        sum +=  signal_filtered[n][c] * cos((pi * n) * (2.0 * k + 1.0) / (2.0 * N));
-                    }
                     sum = (signal_filtered[0][c] / sqrt(N)) + (sqrt(2.0 / N)*sum);
-                }
                 else
-                {
-                    for (auto n = 1; n <= (N - 1); n++)
-                    {
-                        sum += signal_filtered[n][c] * cos((pi * n) * (2.0 * k + 1.0) / (2.0 * N));
-                    }
                     sum = signal_filtered[0][c] + (2.0 * sum);
-                }
                 
                 dct[k][c] = (float)sum;
             }
