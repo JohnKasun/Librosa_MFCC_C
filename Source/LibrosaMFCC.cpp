@@ -13,7 +13,7 @@
 Lib_Mfcc::Lib_Mfcc() : forwardFFT(fftOrder) {}
 Lib_Mfcc::~Lib_Mfcc() {}
 
-std::vector<std::vector<float>> Lib_Mfcc::doMfcc(std::vector<float> y, int sampleRate, int n_mfcc, int dct_type, int hopLength, bool centered)
+std::vector<std::vector<float>> Lib_Mfcc::doMfcc(std::vector<float> y, int sampleRate, int n_mfcc, int dct_type, bool ortho, int hopLength, bool centered)
 {
     std::vector<std::vector<float>> error;
     if (hopLength < fftSize)
@@ -28,7 +28,7 @@ std::vector<std::vector<float>> Lib_Mfcc::doMfcc(std::vector<float> y, int sampl
         auto fft = doFFT(y_pad, hopLength);
         auto signal_power = signalPower(fft);
         auto audio_filtered = doFilter(signal_power, mel_basis);
-        auto cepCoeff = doDCT(audio_filtered, n_mfcc, dct_type);
+        auto cepCoeff = doDCT(audio_filtered, n_mfcc, dct_type, ortho);
 
         return cepCoeff;
     }
@@ -334,7 +334,7 @@ std::vector<std::vector<float>> Lib_Mfcc::doFilter(std::vector<std::vector<float
 
 }
 
-std::vector<std::vector<float>> Lib_Mfcc::doDCT(std::vector<std::vector<float>> signal_filtered, int n_mfcc, int dct_type)
+std::vector<std::vector<float>> Lib_Mfcc::doDCT(std::vector<std::vector<float>> signal_filtered, int n_mfcc, int dct_type, bool ortho)
 {
     auto N = signal_filtered.size();
     auto col = signal_filtered[0].size();
@@ -364,12 +364,18 @@ std::vector<std::vector<float>> Lib_Mfcc::doDCT(std::vector<std::vector<float>> 
                 auto sum = 0.0;
                 for (auto n = 0; n <= (N-1); n++)
                 {
-                    if (k == 0)
-                        sum += sqrt(1.0 / (4.0 * N)) * 2.0 * signal_filtered[n][c] * cos((pi * k) * (2.0 * n + 1.0) / (2.0 * N));
-                    else
-                        sum += sqrt(1.0 / (2.0 * N)) * 2.0 * signal_filtered[n][c] * cos((pi * k) * (2.0 * n + 1.0) / (2.0 * N));
+                    sum += 2.0 * signal_filtered[n][c] * cos((pi * k) * (2.0 * n + 1.0) / (2.0 * N));
                 }
-                dct[k][c] = (float)sum;
+
+                auto coeff = 1.0;
+                if (ortho)
+                {
+                    if (k == 0)
+                        coeff = sqrt(1.0 / (4.0 * N));
+                    else
+                        coeff = sqrt(1.0 / (2.0 * N));
+                }
+                dct[k][c] = (float)(coeff * sum);
             }
         }
     }
@@ -380,10 +386,21 @@ std::vector<std::vector<float>> Lib_Mfcc::doDCT(std::vector<std::vector<float>> 
             for (auto k = 0; k < N; k++)
             {
                 auto sum = 0.0;
-                for (auto n = 1; n <= (N-1); n++)
+                if (ortho)
                 {
-                    sum += (signal_filtered[0][c] / sqrt(N)) + (sqrt(2.0 / N) * signal_filtered[n][c] * cos((pi * n) * (2.0 * k + 1.0) / (2.0 * N)));
+                    for (auto n = 1; n <= (N - 1); n++)
+                    {
+                        sum += (signal_filtered[0][c] / sqrt(N)) + (sqrt(2.0 / N) * signal_filtered[n][c] * cos((pi * n) * (2.0 * k + 1.0) / (2.0 * N)));
+                    }
                 }
+                else
+                {
+                    for (auto n = 1; n <= (N - 1); n++)
+                    {
+                        sum += signal_filtered[0][c] + (2 * signal_filtered[n][c] * cos((pi * n) * (2.0 * k + 1.0) / (2.0 * N)));
+                    }
+                }
+                
                 dct[k][c] = (float)sum;
             }
         }

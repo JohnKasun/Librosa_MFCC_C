@@ -22,7 +22,7 @@ public:
     ~Lib_Mfcc();
 
     //master function
-    std::vector<std::vector<float>> doMfcc(std::vector<float> y, int sampleRate = 22050, int n_mfcc = 20, int dct_type = 2, int hopLength = 512, bool centered = true);
+    std::vector<std::vector<float>> doMfcc(std::vector<float> y, int sampleRate = 22050, int n_mfcc = 20, int dct_type = 2, bool ortho = true, int hopLength = 512, bool centered = true);
 
 private:
 
@@ -40,7 +40,7 @@ private:
     std::vector<std::vector<float>> doFFT(std::vector<float> audio, int hopLength);
     std::vector<std::vector<float>> signalPower(std::vector<std::vector<float>> fftData);
     std::vector<std::vector<float>> doFilter(std::vector<std::vector<float>> signal_power, std::vector<std::vector<float>> mel_basis);
-    std::vector<std::vector<float>> doDCT(std::vector<std::vector<float>> signal_filtered, int n_mfcc, int dct_type);
+    std::vector<std::vector<float>> doDCT(std::vector<std::vector<float>> signal_filtered, int n_mfcc, int dct_type, bool ortho);
 
     juce::dsp::FFT forwardFFT; // FFT object to perform forward fft on
 };
