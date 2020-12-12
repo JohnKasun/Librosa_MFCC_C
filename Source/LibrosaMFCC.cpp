@@ -16,25 +16,26 @@ Lib_Mfcc::~Lib_Mfcc() {}
 std::vector<std::vector<float>> Lib_Mfcc::doMfcc(std::vector<float> y, int sampleRate, int n_mfcc, int dct_type, bool ortho, int hopLength, bool centered)
 {
     std::vector<std::vector<float>> error;
-    if (hopLength < fftSize)
+    if ((sampleRate > 0) && (n_mfcc > 0) && (dct_type == 1 || dct_type == 2 || dct_type == 3) && (hopLength > 0))
     {
         auto y_pad = y;
         if (centered)
             y_pad = padAudio(y);
         else if (y.size() < fftSize)
             return error;
-        
-        auto mel_basis      = getMelFilterBank(sampleRate);
-        auto fft            = doFFT(y_pad, hopLength);
-        auto signal_power   = signalPower(fft);
+
+        auto mel_basis = getMelFilterBank(sampleRate);
+        auto fft = doFFT(y_pad, hopLength);
+        auto signal_power = signalPower(fft);
         auto audio_filtered = doFilter(signal_power, mel_basis);
-        auto cepCoeff       = doDCT(audio_filtered, n_mfcc, dct_type, ortho);
+        auto cepCoeff = doDCT(audio_filtered, n_mfcc, dct_type, ortho);
 
         return cepCoeff;
     }
     else
         return error;
     
+
 }
 
 double Lib_Mfcc::freqToMel(double freq)
