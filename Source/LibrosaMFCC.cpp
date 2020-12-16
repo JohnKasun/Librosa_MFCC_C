@@ -9,6 +9,8 @@
 */
 
 #include "LibrosaMFCC.h"
+#include <complex>
+
 
 Lib_Mfcc::Lib_Mfcc() : forwardFFT(fftOrder) {}
 Lib_Mfcc::~Lib_Mfcc() {}
@@ -236,6 +238,62 @@ std::vector<std::vector<float>> Lib_Mfcc::getMelFilterBank(double sampleRate)
     return weights;
 
 }
+std::vector<float> Lib_Mfcc::FFT_recursion(std::vector<float> audio)
+{
+    using namespace std::complex_literals;
+    auto N = audio.size();
+    std::vector<std::complex<float>> phasor(N/2);
+
+    for (int n = 0; n < N/2; n++)
+    {
+        phasor[n] = pow(exp(-2 * pi /N * 1i), n);
+    }
+
+    if (N == 1) 
+    {
+        return audio;
+    }
+    else
+    {
+        std::vector<float> odd_half;
+        std::vector<float> even_half;
+
+        for (auto i = 0; i < N - 1; i = i + 2)
+        {
+            odd_half.push_back(audio[i]);
+        }
+
+        for (auto j = 1; j < N ; j = j = j + 2)
+        {
+            even_half.push_back(audio[j]);
+        }
+
+        auto y_top = FFT_recursion(odd_half);
+        auto y_bottom = FFT_recursion(even_half);
+
+        std::vector<std::complex<float>> z(y_bottom.size());
+
+        for (auto k = 0; k < y_bottom.size(); k++)
+        {
+            z[k] = phasor[k] * y_bottom[k];
+        }
+
+
+        std::vector<float> output(y_top.size() + y_bottom.size());
+
+
+        for(auto i = 0; i < y_top.size(); i++)
+        {
+            output[i] = abs(y_top[i] + z[i]);
+        }
+
+        for (auto j = 0; j < y_bottom.size(); j++)
+        {
+            output[j + y_top.size()] = abs(y_top[j] - z[j]);
+        }
+        return output;
+    } 
+}
 
 std::vector<std::vector<float>> Lib_Mfcc::doFFT(std::vector<float> audio, int hopLength)
 {
@@ -251,8 +309,12 @@ std::vector<std::vector<float>> Lib_Mfcc::doFFT(std::vector<float> audio, int ho
             float hannWindowMultiplier = (float)(0.5 * (1.0 - cos(2.0 * pi * n / ((float)fftSize))));
             audioData[n] = hannWindowMultiplier * audio[n + (hopLength * i)];
         }
+        std::vector<float> oof{ 1,2,3,4,4,3,2,1 };
+       
 
-        forwardFFT.performFrequencyOnlyForwardTransform(audioData.data());
+        //forwardFFT.performFrequencyOnlyForwardTransform(audioData.data());
+        std::vector<float> output;
+        output= FFT_recursion(oof);
 
         std::vector<float>posfftData(1 + (fftSize / 2), 0);
 
