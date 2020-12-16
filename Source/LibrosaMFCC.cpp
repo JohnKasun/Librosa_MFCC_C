@@ -28,8 +28,7 @@ std::vector<std::vector<float>> Lib_Mfcc::doMfcc(std::vector<float> y, int sampl
 
         auto mel_basis = getMelFilterBank(sampleRate);
         auto fft = doFFT(y_pad, hopLength);
-        auto signal_power = signalPower(fft);
-        auto audio_filtered = doFilter(signal_power, mel_basis);
+        auto audio_filtered = doFilter(fft, mel_basis);
         auto cepCoeff = doDCT(audio_filtered, n_mfcc, dct_type, ortho);
 
         return cepCoeff;
@@ -259,18 +258,25 @@ std::vector<std::complex<float>> Lib_Mfcc::FFT_recursion(std::vector<float> audi
     }
     else
     {
-        std::vector<float> odd_half;
-        std::vector<float> even_half;
+        std::vector<float> odd_half(N/2,0);
+        std::vector<float> even_half(N/2,0);
 
-        for (auto i = 0; i < N - 1; i = i + 2)
+        //for (auto i = 0; i < N - 1; i = i + 2)
+        //{
+        //    odd_half.push_back(audio[i]);
+        //}
+
+        for (auto i = 0; i < odd_half.size(); i++)
         {
-            odd_half.push_back(audio[i]);
+            odd_half[i] = audio[i * 2];
+            even_half[i] = audio[(i * 2) + 1];
         }
-
-        for (auto j = 1; j < N ; j = j = j + 2)
+           
+     /*   for (auto j = 1; j < N ; j = j + 2)
         {
             even_half.push_back(audio[j]);
-        }
+        }*/
+           
 
         auto y_top = FFT_recursion(odd_half);
         auto y_bottom = FFT_recursion(even_half);
@@ -313,38 +319,42 @@ std::vector<std::vector<float>> Lib_Mfcc::doFFT(std::vector<float> audio, int ho
             float hannWindowMultiplier = (float)(0.5 * (1.0 - cos(2.0 * pi * n / ((float)fftSize))));
             audioData[n] = hannWindowMultiplier * audio[n + (hopLength * i)];
         }
-        std::vector<float> oof{ 1,2,3,4,-1,-2,-3,-4};
        
+        std::vector<float> fft((fftSize/2) + 1,0);
+        auto output = FFT_recursion(audioData);
+        for (auto i = 0; i < fft.size(); i++)
+            fft[i] = pow(abs(output[i * 2]), 2);
 
-        //forwardFFT.performFrequencyOnlyForwardTransform(audioData.data());
-        std::vector<std::complex<float>> output;
-        output= FFT_recursion(audioData);
+        fftData[i] = fft;
 
-        std::vector<float>posfftData(1 + (fftSize / 2), 0);
+        /*forwardFFT.performFrequencyOnlyForwardTransform(audioData.data());
+        
 
-        for (int j = 0; j <= fftSize / 2; j++)
+        std::vector<float>posfftData((fftSize / 2) + 1, 0);
+
+        for (int j = 0; j < posfftData.size(); j++)
         {
             posfftData[j] = audioData[j];
         }
 
-        fftData[i] = posfftData;
+        fftData[i] = posfftData;*/
     }
 
     return fftData;
 }
 
-std::vector<std::vector<float>> Lib_Mfcc::signalPower(std::vector<std::vector<float>> fftData)
-{
-    auto power = std::vector<std::vector<float>>(fftData.size(), std::vector<float>(fftData[0].size()));
-
-    for (auto i = 0; i < fftData.size(); i++) {
-        for (auto j = 0; j < fftData[0].size(); j++) {
-            power[i][j] = pow(fftData[i][j], 2);
-        }
-    }
-
-    return power;
-}
+//std::vector<std::vector<float>> Lib_Mfcc::signalPower(std::vector<std::vector<float>> fftData)
+//{
+//    auto power = std::vector<std::vector<float>>(fftData.size(), std::vector<float>(fftData[0].size()));
+//
+//    for (auto i = 0; i < fftData.size(); i++) {
+//        for (auto j = 0; j < fftData[0].size(); j++) {
+//            power[i][j] = pow(fftData[i][j], 2);
+//        }
+//    }
+//
+//    return power;
+//}
 
 std::vector<std::vector<float>> Lib_Mfcc::doFilter(std::vector<std::vector<float>> signal_power, std::vector<std::vector<float>> mel_basis)
 {
