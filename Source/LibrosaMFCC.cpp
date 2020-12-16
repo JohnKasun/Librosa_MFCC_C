@@ -238,7 +238,7 @@ std::vector<std::vector<float>> Lib_Mfcc::getMelFilterBank(double sampleRate)
     return weights;
 
 }
-std::vector<float> Lib_Mfcc::FFT_recursion(std::vector<float> audio)
+std::vector<std::complex<float>> Lib_Mfcc::FFT_recursion(std::vector<float> audio)
 {
     using namespace std::complex_literals;
     auto N = audio.size();
@@ -251,7 +251,11 @@ std::vector<float> Lib_Mfcc::FFT_recursion(std::vector<float> audio)
 
     if (N == 1) 
     {
-        return audio;
+        std::vector<std::complex<float>> output(1);
+        output[0].real(audio[0]);
+        output[0].imag(0);
+        
+        return output;
     }
     else
     {
@@ -279,17 +283,17 @@ std::vector<float> Lib_Mfcc::FFT_recursion(std::vector<float> audio)
         }
 
 
-        std::vector<float> output(y_top.size() + y_bottom.size());
+        std::vector<std::complex<float>> output(y_top.size() + y_bottom.size());
 
 
         for(auto i = 0; i < y_top.size(); i++)
         {
-            output[i] = abs(y_top[i] + z[i]);
+            output[i] = y_top[i] + z[i];
         }
 
         for (auto j = 0; j < y_bottom.size(); j++)
         {
-            output[j + y_top.size()] = abs(y_top[j] - z[j]);
+            output[j + y_top.size()] = y_top[j] - z[j];
         }
         return output;
     } 
@@ -309,12 +313,12 @@ std::vector<std::vector<float>> Lib_Mfcc::doFFT(std::vector<float> audio, int ho
             float hannWindowMultiplier = (float)(0.5 * (1.0 - cos(2.0 * pi * n / ((float)fftSize))));
             audioData[n] = hannWindowMultiplier * audio[n + (hopLength * i)];
         }
-        std::vector<float> oof{ 1,2,3,4,4,3,2,1 };
+        std::vector<float> oof{ 1,2,3,4,-1,-2,-3,-4};
        
 
         //forwardFFT.performFrequencyOnlyForwardTransform(audioData.data());
-        std::vector<float> output;
-        output= FFT_recursion(oof);
+        std::vector<std::complex<float>> output;
+        output= FFT_recursion(audioData);
 
         std::vector<float>posfftData(1 + (fftSize / 2), 0);
 

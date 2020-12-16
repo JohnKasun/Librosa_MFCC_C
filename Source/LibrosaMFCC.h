@@ -40,7 +40,7 @@ private:
     std::vector<float> padAudio(std::vector<float> y);
     std::vector<std::vector<float>> getMelFilterBank(double sampleRate);
     std::vector<std::vector<float>> doFFT(std::vector<float> audio, int hopLength);
-    std::vector<float> FFT_recursion(std::vector<float> audio);
+    std::vector<std::complex<float>> FFT_recursion(std::vector<float> audio);
     std::vector<std::vector<float>> signalPower(std::vector<std::vector<float>> fftData);
     std::vector<std::vector<float>> doFilter(std::vector<std::vector<float>> signal_power, std::vector<std::vector<float>> mel_basis);
     std::vector<std::vector<float>> doDCT(std::vector<std::vector<float>> signal_filtered, int n_mfcc, int dct_type, bool ortho);
