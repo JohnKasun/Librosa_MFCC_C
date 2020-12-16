@@ -313,7 +313,7 @@ std::vector<std::vector<float>> Lib_Mfcc::doFFT(std::vector<float> audio, int ho
     std::vector<std::vector<float>> fftData(numOfFFTs, std::vector<float>(1 + (fftSize / 2)));
 
     for (int i = 0; i < numOfFFTs; i++) {
-        std::vector<float> audioData(fftSize * 2);
+        std::vector<float> audioData(fftSize);
 
         for (int n = 0; n < (fftSize); n++) {
             float hannWindowMultiplier = (float)(0.5 * (1.0 - cos(2.0 * pi * n / ((float)fftSize))));
@@ -323,7 +323,7 @@ std::vector<std::vector<float>> Lib_Mfcc::doFFT(std::vector<float> audio, int ho
         std::vector<float> fft((fftSize/2) + 1,0);
         auto output = FFT_recursion(audioData);
         for (auto i = 0; i < fft.size(); i++)
-            fft[i] = pow(abs(output[i * 2]), 2);
+            fft[i] = pow(abs(output[i]), 2);
 
         fftData[i] = fft;
 
