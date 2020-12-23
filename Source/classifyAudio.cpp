@@ -43,7 +43,7 @@ void classifyAudio::tester(juce::AudioBuffer<float> buffer, double sampleRate)
 {
 
     juce::File myFile{ juce::File::getSpecialLocation(juce::File::SpecialLocationType::userDocumentsDirectory) };
-    auto mySamples = myFile.findChildFiles(juce::File::TypesOfFileToFind::findFiles, true, "flute-A4.wav");
+    auto mySamples = myFile.findChildFiles(juce::File::TypesOfFileToFind::findFiles, true, "impulse-response.wav");
 
     auto reader = mFormatManager.createReaderFor(mySamples[0]);
     juce::AudioSampleBuffer bufferTest((int)reader->numChannels, (int)reader->lengthInSamples);
@@ -64,7 +64,7 @@ void classifyAudio::tester(juce::AudioBuffer<float> buffer, double sampleRate)
         audio[i] = audio[i] / absmax;
     }
 
-    auto mfcc = Mfcc.doMfcc(audio, 44100, 20, 2, true, 1024, 1024, true);
+    auto mfcc = Mfcc.doMfcc(audio, 22050, 20, 2, true, 768, 10, true);
 
     testAccuracy1D(audio);
     testAccuracy2D(mfcc);

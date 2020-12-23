@@ -15,10 +15,12 @@
 Lib_Mfcc::Lib_Mfcc() {}
 Lib_Mfcc::~Lib_Mfcc() {}
 
-std::vector<std::vector<float>> Lib_Mfcc::doMfcc(std::vector<float> y, int sampleRate, int n_mfcc, int dct_type, bool ortho, int hopLength, int fftSize, bool centered)
+std::vector<std::vector<float>> Lib_Mfcc::doMfcc(std::vector<float> y, int sampleRate, int n_mfcc, int dct_type, bool ortho, int hopLength, int fftOrder, bool centered)
 {
+    auto fftSize = 1 << fftOrder;
+
     std::vector<std::vector<float>> error;
-    if ((sampleRate > 0) && (n_mfcc > 0) && (dct_type == 1 || dct_type == 2 || dct_type == 3) && (hopLength > 0) && (fftSize > 0))
+    if ((sampleRate > 0) && (n_mfcc > 0) && (dct_type == 1 || dct_type == 2 || dct_type == 3) && (hopLength > 0) && (fftOrder > 0) && (fftSize < y.size()))
     {
         auto y_pad = y;
         if (centered)

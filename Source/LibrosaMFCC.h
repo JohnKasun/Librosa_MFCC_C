@@ -21,7 +21,7 @@ public:
     ~Lib_Mfcc();
 
     //master function
-    std::vector<std::vector<float>> doMfcc(std::vector<float> y, int sampleRate = 22050, int n_mfcc = 20, int dct_type = 2, bool ortho = true, int hopLength = 512, int fftSize = 2048, bool centered = true);
+    std::vector<std::vector<float>> doMfcc(std::vector<float> y, int sampleRate = 22050, int n_mfcc = 20, int dct_type = 2, bool ortho = true, int hopLength = 512, int fftOrder = 11, bool centered = true);
 
 private:
 
