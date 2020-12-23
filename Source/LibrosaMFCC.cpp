@@ -12,22 +12,22 @@
 #include <complex>
 
 
-Lib_Mfcc::Lib_Mfcc() : forwardFFT(fftOrder) {}
+Lib_Mfcc::Lib_Mfcc() {}
 Lib_Mfcc::~Lib_Mfcc() {}
 
-std::vector<std::vector<float>> Lib_Mfcc::doMfcc(std::vector<float> y, int sampleRate, int n_mfcc, int dct_type, bool ortho, int hopLength, bool centered)
+std::vector<std::vector<float>> Lib_Mfcc::doMfcc(std::vector<float> y, int sampleRate, int n_mfcc, int dct_type, bool ortho, int hopLength, int fftSize, bool centered)
 {
     std::vector<std::vector<float>> error;
-    if ((sampleRate > 0) && (n_mfcc > 0) && (dct_type == 1 || dct_type == 2 || dct_type == 3) && (hopLength > 0))
+    if ((sampleRate > 0) && (n_mfcc > 0) && (dct_type == 1 || dct_type == 2 || dct_type == 3) && (hopLength > 0) && (fftSize > 0))
     {
         auto y_pad = y;
         if (centered)
-            y_pad = padAudio(y);
+            y_pad = padAudio(y, fftSize);
         else if (y.size() < fftSize)
             return error;
 
-        auto mel_basis = getMelFilterBank(sampleRate);
-        auto fft = doFFT(y_pad, hopLength);
+        auto mel_basis = getMelFilterBank(sampleRate, fftSize);
+        auto fft = doFFT(y_pad, hopLength, fftSize);
         auto audio_filtered = doFilter(fft, mel_basis);
         auto cepCoeff = doDCT(audio_filtered, n_mfcc, dct_type, ortho);
 
@@ -140,27 +140,21 @@ std::vector<std::vector<float>> Lib_Mfcc::dotProduct(std::vector<std::vector<flo
 {
     std::vector<std::vector<float>> output(matrix1.size(), std::vector<float>(matrix2[0].size()));
 
-    if (matrix1[0].size() != matrix2.size())
+    for (auto i = 0; i < matrix1.size(); i++)
     {
-        DBG("cannot perform dot product");
-    }
-    else
-    {
-        for (auto i = 0; i < matrix1.size(); i++)
+        for (auto j = 0; j < matrix2[0].size(); j++)
         {
-            for (auto j = 0; j < matrix2[0].size(); j++)
+            for (auto k = 0; k < matrix1[0].size(); k++)
             {
-                for (auto k = 0; k < matrix1[0].size(); k++)
-                {
-                    output[i][j] += matrix1[i][k] * matrix2[k][j];
-                }
+                output[i][j] += matrix1[i][k] * matrix2[k][j];
             }
         }
     }
+    
     return output;
 }
 
-std::vector<float> Lib_Mfcc::padAudio(std::vector<float> y)
+std::vector<float> Lib_Mfcc::padAudio(std::vector<float> y, int fftSize)
 {
     int numPad = int(fftSize / 2);
     std::vector<float> y_pad((size_t)(y.size() + (2.0 * numPad)), 0);
@@ -179,7 +173,7 @@ std::vector<float> Lib_Mfcc::padAudio(std::vector<float> y)
     return y_pad;
 }
 
-std::vector<std::vector<float>> Lib_Mfcc::getMelFilterBank(double sampleRate)
+std::vector<std::vector<float>> Lib_Mfcc::getMelFilterBank(double sampleRate, int fftSize)
 {
     auto fmin_mel = freqToMel(0.0);
     auto fmax_mel = freqToMel(sampleRate / 2.0);
@@ -261,22 +255,11 @@ std::vector<std::complex<float>> Lib_Mfcc::FFT_recursion(std::vector<float> audi
         std::vector<float> odd_half(N/2,0);
         std::vector<float> even_half(N/2,0);
 
-        //for (auto i = 0; i < N - 1; i = i + 2)
-        //{
-        //    odd_half.push_back(audio[i]);
-        //}
-
         for (auto i = 0; i < odd_half.size(); i++)
         {
             odd_half[i] = audio[i * 2];
             even_half[i] = audio[(i * 2) + 1];
         }
-           
-     /*   for (auto j = 1; j < N ; j = j + 2)
-        {
-            even_half.push_back(audio[j]);
-        }*/
-           
 
         auto y_top = FFT_recursion(odd_half);
         auto y_bottom = FFT_recursion(even_half);
@@ -305,7 +288,7 @@ std::vector<std::complex<float>> Lib_Mfcc::FFT_recursion(std::vector<float> audi
     } 
 }
 
-std::vector<std::vector<float>> Lib_Mfcc::doFFT(std::vector<float> audio, int hopLength)
+std::vector<std::vector<float>> Lib_Mfcc::doFFT(std::vector<float> audio, int hopLength, int fftSize)
 {
     using namespace std::complex_literals;
 
@@ -313,6 +296,7 @@ std::vector<std::vector<float>> Lib_Mfcc::doFFT(std::vector<float> audio, int ho
     std::vector<std::vector<float>> fftData(numOfFFTs, std::vector<float>(1 + (fftSize / 2)));
 
     for (int i = 0; i < numOfFFTs; i++) {
+
         std::vector<float> audioData(fftSize);
 
         for (int n = 0; n < (fftSize); n++) {
@@ -323,53 +307,29 @@ std::vector<std::vector<float>> Lib_Mfcc::doFFT(std::vector<float> audio, int ho
         std::vector<float> fft((fftSize/2) + 1,0);
         auto output = FFT_recursion(audioData);
         for (auto i = 0; i < fft.size(); i++)
-            fft[i] = pow(abs(output[i]), 2);
+            fft[i] = abs(output[i]);
 
         fftData[i] = fft;
 
-        /*forwardFFT.performFrequencyOnlyForwardTransform(audioData.data());
-        
-
-        std::vector<float>posfftData((fftSize / 2) + 1, 0);
-
-        for (int j = 0; j < posfftData.size(); j++)
-        {
-            posfftData[j] = audioData[j];
-        }
-
-        fftData[i] = posfftData;*/
     }
 
     return fftData;
 }
 
-//std::vector<std::vector<float>> Lib_Mfcc::signalPower(std::vector<std::vector<float>> fftData)
-//{
-//    auto power = std::vector<std::vector<float>>(fftData.size(), std::vector<float>(fftData[0].size()));
-//
-//    for (auto i = 0; i < fftData.size(); i++) {
-//        for (auto j = 0; j < fftData[0].size(); j++) {
-//            power[i][j] = pow(fftData[i][j], 2);
-//        }
-//    }
-//
-//    return power;
-//}
-
-std::vector<std::vector<float>> Lib_Mfcc::doFilter(std::vector<std::vector<float>> signal_power, std::vector<std::vector<float>> mel_basis)
+std::vector<std::vector<float>> Lib_Mfcc::doFilter(std::vector<std::vector<float>> fft, std::vector<std::vector<float>> mel_basis)
 {
-    std::vector<std::vector<float> > trans_vec(signal_power[0].size(), std::vector<float>(signal_power.size()));
+    std::vector<std::vector<float>> signal_power(fft[0].size(), std::vector<float>(fft.size()));
 
-    for (int i = 0; i < signal_power.size(); i++)
+    for (int i = 0; i < fft.size(); i++)
     {
-        for (int j = 0; j < signal_power[i].size(); j++)
+        for (int j = 0; j < fft[i].size(); j++)
         {
-            trans_vec[j][i] = signal_power[i][j];
+            signal_power[j][i] = pow(fft[i][j], 2);
         }
     }
 
 
-    auto dot = dotProduct(mel_basis, trans_vec);
+    auto dot = dotProduct(mel_basis, signal_power);
 
     auto amin = 1e-10;
     auto topDB = (float)80.0;

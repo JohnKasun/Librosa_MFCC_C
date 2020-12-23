@@ -8,15 +8,12 @@
   ==============================================================================
 */
 #pragma once
-#include <JuceHeader.h>
 #include <complex>
 #include <cmath>
 #include <vector>
 
 class Lib_Mfcc
 {
-    static constexpr auto fftOrder = 10;
-    static constexpr auto fftSize = 1 << fftOrder;
     static constexpr auto melFilterNum = 128;
 
 public:
@@ -24,7 +21,7 @@ public:
     ~Lib_Mfcc();
 
     //master function
-    std::vector<std::vector<float>> doMfcc(std::vector<float> y, int sampleRate = 22050, int n_mfcc = 20, int dct_type = 2, bool ortho = true, int hopLength = 512, bool centered = true);
+    std::vector<std::vector<float>> doMfcc(std::vector<float> y, int sampleRate = 22050, int n_mfcc = 20, int dct_type = 2, bool ortho = true, int hopLength = 512, int fftSize = 2048, bool centered = true);
 
 private:
 
@@ -37,15 +34,13 @@ private:
     std::vector<std::vector<float>> dotProduct(std::vector<std::vector<float>> matrix1, std::vector<std::vector<float>> matrix2);
 
     //process functions
-    std::vector<float> padAudio(std::vector<float> y);
-    std::vector<std::vector<float>> getMelFilterBank(double sampleRate);
-    std::vector<std::vector<float>> doFFT(std::vector<float> audio, int hopLength);
+    std::vector<float> padAudio(std::vector<float> y, int fftSize);
+    std::vector<std::vector<float>> getMelFilterBank(double sampleRate, int fftSize);
+    std::vector<std::vector<float>> doFFT(std::vector<float> audio, int hopLength, int fftSize);
     std::vector<std::complex<float>> FFT_recursion(std::vector<float> audio);
-    //std::vector<std::vector<float>> signalPower(std::vector<std::vector<float>> fftData);
-    std::vector<std::vector<float>> doFilter(std::vector<std::vector<float>> signal_power, std::vector<std::vector<float>> mel_basis);
+    std::vector<std::vector<float>> doFilter(std::vector<std::vector<float>> fft, std::vector<std::vector<float>> mel_basis);
     std::vector<std::vector<float>> doDCT(std::vector<std::vector<float>> signal_filtered, int n_mfcc, int dct_type, bool ortho);
 
-    juce::dsp::FFT forwardFFT; // FFT object to perform forward fft on
     double pi = 3.14159265358;
 };
 
